@@ -4,15 +4,22 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	"github.com/AlRowne/pokedexcli/internal/pokeapi"
 )
 
-func commandExit() error {
+type config struct {
+	Next     string
+	Previous string
+}
+
+func commandExit(cfg *config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp() error {
+func commandHelp(cfg *config) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println()
@@ -22,16 +29,50 @@ func commandHelp() error {
 	}
 	return nil
 }
+func commandMap(cfg *config) error {
+	locationAreas, err := pokeapi.GetLocationAreas(cfg.Next)
+	if err != nil {
+		return err
+	}
 
-func commandMap() error {
-	
+	for _, result := range locationAreas.Results {
+		fmt.Println(result.Name)
+	}
+	cfg.Next = stringOrEmpty(locationAreas.Next)
+	cfg.Previous = stringOrEmpty(locationAreas.Previous)
 	return nil
+}
+
+func commandMapb(cfg *config) error {
+	if cfg.Previous == "" {
+		fmt.Println("you're on the first page")
+		return nil
+	}
+
+	locationAreas, err := pokeapi.GetLocationAreas(cfg.Previous)
+	if err != nil {
+		return err
+	}
+
+	for _, result := range locationAreas.Results {
+		fmt.Println(result.Name)
+	}
+	cfg.Next = stringOrEmpty(locationAreas.Next)
+	cfg.Previous = stringOrEmpty(locationAreas.Previous)
+	return nil
+}
+
+func stringOrEmpty(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(*config) error
 }
 
 func getCommands() map[string]cliCommand {
@@ -43,8 +84,18 @@ func getCommands() map[string]cliCommand {
 		},
 		"help": {
 			name:        "help",
-			description: "Displays a help message",
+			description: "displays a help message",
 			callback:    commandHelp,
+		},
+		"map": {
+			name:        "map",
+			description: "Displays the next 20 Location-Areas",
+			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Displays the previous 20 Location-Areas",
+			callback:    commandMapb,
 		},
 	}
 	return cliCommands
@@ -52,6 +103,8 @@ func getCommands() map[string]cliCommand {
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
+
+	cfg := config{}
 
 	for {
 		fmt.Print("Pokedex > ")
@@ -71,7 +124,7 @@ func main() {
 			fmt.Println("Unknown command")
 			continue
 		}
-		if err := val.callback(); err != nil {
+		if err := val.callback(&cfg); err != nil {
 			fmt.Println(err)
 		}
 	}
