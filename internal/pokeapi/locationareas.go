@@ -50,10 +50,10 @@ func GetLocationAreas(url string) (LocationAreaResponse, error) {
 	if err != nil {
 		return LocationAreaResponse{}, err
 	}
-	cache.Add(url, data)
 	if err := json.Unmarshal(data, &loc); err != nil {
 		return LocationAreaResponse{}, err
 	}
+	cache.Add(url, data)
 
 	return loc, nil
 }
