@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"sort"
 
 	"github.com/AlRowne/pokedexcli/internal/pokeapi"
 )
@@ -125,6 +126,23 @@ func commandInspect(cfg *config, s string) error {
 	return nil
 }
 
+func commandPokedex(cfg *config, s string) error {
+	if len(cfg.Pokedex) < 1 {
+		return errors.New("your pokedex is empty")
+	}
+	var names []string
+	for _, pokemon := range cfg.Pokedex {
+		names = append(names, pokemon.Name)
+	}
+	sort.Strings(names)
+
+	fmt.Println("Your Pokedex:")
+	for _, name := range names {
+		fmt.Printf(" - %s\n", name)
+	}
+	return nil
+}
+
 type cliCommand struct {
 	name        string
 	description string
@@ -165,8 +183,13 @@ func getCommands() map[string]cliCommand {
 		},
 		"inspect": {
 			name:        "inspect",
-			description: "Print various stats for a Pokemon that's already in the Pokedex",
+			description: "Print various stats for a Pokemon that's already in the PokeDex",
 			callback:    commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Show your PokeDex",
+			callback:    commandPokedex,
 		},
 	}
 	return cliCommands
