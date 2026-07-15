@@ -20,7 +20,7 @@ type PokemonInfo struct {
 }
 
 func GetPokemonEncounters(locationName string) (ExploreResponse, error) {
-	url := baseURL + locationName + "/"
+	url := locationAreaURL + locationName + "/"
 
 	cacheRes, ok := cache.Get(url)
 	if ok {

@@ -2,7 +2,9 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 
 	"github.com/AlRowne/pokedexcli/internal/pokeapi"
@@ -11,6 +13,7 @@ import (
 type config struct {
 	Next     string
 	Previous string
+	Pokedex  map[string]pokeapi.Pokemon
 }
 
 func commandExit(cfg *config, s string) error {
@@ -63,6 +66,9 @@ func commandMapb(cfg *config, s string) error {
 }
 
 func commandExplore(cfg *config, s string) error {
+	if s == "" {
+		return errors.New("please provide an area to explore. use the map/mapb command")
+	}
 	fmt.Printf("Exploring %s...\n", s)
 	response, err := pokeapi.GetPokemonEncounters(s)
 	if err != nil {
@@ -73,6 +79,25 @@ func commandExplore(cfg *config, s string) error {
 
 	for _, encounter := range response.PokemonEncounters {
 		fmt.Printf(" - %s\n", encounter.Pokemon.Name)
+	}
+	return nil
+}
+
+func commandCatch(cfg *config, s string) error {
+	if s == "" {
+		return errors.New("please provide a Pokemon to catch. use the explore command to find pokemon")
+	}
+	fmt.Printf("Throwing a Pokeball at %s...\n", s)
+	pokemon, err := pokeapi.GetPokemon(s)
+	if err != nil {
+		return err
+	}
+	threshold := 40
+	if rand.Intn(pokemon.BaseExperience) < threshold {
+		fmt.Printf("%s was caught!\n", pokemon.Name)
+		cfg.Pokedex[pokemon.Name] = pokemon
+	} else {
+		fmt.Printf("%s escaped!\n", pokemon.Name)
 	}
 	return nil
 }
@@ -117,6 +142,11 @@ func getCommands() map[string]cliCommand {
 			description: "Shows all Pokemon in the provided area",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch",
+			description: "Try to catch a pokemon. If it's caught, it gets added to the PokeDex",
+			callback:    commandCatch,
+		},
 	}
 	return cliCommands
 }
@@ -125,6 +155,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	cfg := config{}
+	cfg.Pokedex = make(map[string]pokeapi.Pokemon)
 
 	for {
 		fmt.Print("Pokedex > ")
@@ -138,12 +169,9 @@ func main() {
 			continue
 		}
 		command := words[0]
-		explArea := ""
-		if command == "explore" && len(words) < 2 {
-			fmt.Println("Please provide an area to explore. (Use the map/mapb command)")
-			continue
-		} else if command == "explore" && len(words) >= 2 {
-			explArea = words[1]
+		argument := ""
+		if len(words) > 1 {
+			argument = words[1]
 		}
 
 		commands := getCommands()
@@ -152,7 +180,7 @@ func main() {
 			fmt.Println("Unknown command")
 			continue
 		}
-		if err := val.callback(&cfg, explArea); err != nil {
+		if err := val.callback(&cfg, argument); err != nil {
 			fmt.Println(err)
 		}
 	}

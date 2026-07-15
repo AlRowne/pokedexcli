@@ -9,7 +9,7 @@ import (
 	"github.com/AlRowne/pokedexcli/internal/pokecache"
 )
 
-const baseURL = "https://pokeapi.co/api/v2/location-area/"
+const locationAreaURL = "https://pokeapi.co/api/v2/location-area/"
 const cacheInterval = 30 * time.Minute
 
 var cache = pokecache.NewCache(cacheInterval)
@@ -28,7 +28,7 @@ type LocationArea struct {
 
 func GetLocationAreas(url string) (LocationAreaResponse, error) {
 	if url == "" {
-		url = baseURL
+		url = locationAreaURL
 	}
 
 	cacheRes, ok := cache.Get(url)
