@@ -93,12 +93,35 @@ func commandCatch(cfg *config, s string) error {
 		return err
 	}
 	threshold := 40
-	if rand.Intn(pokemon.BaseExperience) < threshold {
+	if pokemon.BaseExperience <= 0 || rand.Intn(pokemon.BaseExperience) < threshold {
 		fmt.Printf("%s was caught!\n", pokemon.Name)
 		cfg.Pokedex[pokemon.Name] = pokemon
 	} else {
 		fmt.Printf("%s escaped!\n", pokemon.Name)
 	}
+	return nil
+}
+
+func commandInspect(cfg *config, s string) error {
+	if s == "" {
+		return errors.New("no pokemon name provided")
+	}
+	pokemon, ok := cfg.Pokedex[s]
+	if !ok {
+		return errors.New("you have not caught that pokemon")
+	}
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range pokemon.Stats {
+		fmt.Printf(" - %s: %d\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, t := range pokemon.Types {
+		fmt.Printf(" - %s\n", t.Type.Name)
+	}
+
 	return nil
 }
 
@@ -146,6 +169,11 @@ func getCommands() map[string]cliCommand {
 			name:        "catch",
 			description: "Try to catch a pokemon. If it's caught, it gets added to the PokeDex",
 			callback:    commandCatch,
+		},
+		"inspect": {
+			name:        "inspect",
+			description: "Print various stats for a Pokemon that's already in the Pokedex",
+			callback:    commandInspect,
 		},
 	}
 	return cliCommands
