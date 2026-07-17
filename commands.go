@@ -40,6 +40,7 @@ func commandMap(cfg *config, s string) error {
 	}
 
 	for _, result := range locationAreas.Results {
+		cfg.KnownLocations[result.Name] = struct{}{}
 		fmt.Println(result.Name)
 	}
 	cfg.Next = stringOrEmpty(locationAreas.Next)
@@ -59,6 +60,7 @@ func commandMapb(cfg *config, s string) error {
 	}
 
 	for _, result := range locationAreas.Results {
+		cfg.KnownLocations[result.Name] = struct{}{}
 		fmt.Println(result.Name)
 	}
 	cfg.Next = stringOrEmpty(locationAreas.Next)
@@ -79,6 +81,7 @@ func commandExplore(cfg *config, s string) error {
 	fmt.Println("Found Pokemon:")
 
 	for _, encounter := range response.PokemonEncounters {
+		cfg.KnownPokemon[encounter.Pokemon.Name] = struct{}{}
 		fmt.Printf(" - %s\n", encounter.Pokemon.Name)
 	}
 	return nil
@@ -144,9 +147,37 @@ func commandPokedex(cfg *config, s string) error {
 }
 
 type cliCommand struct {
-	name        string
-	description string
-	callback    func(*config, string) error
+	name         string
+	description  string
+	callback     func(*config, string) error
+	argCompleter func(*config) []string
+}
+
+func getKnownLocations(cfg *config) []string {
+	var loc []string
+	for l := range cfg.KnownLocations {
+		loc = append(loc, l)
+	}
+	sort.Strings(loc)
+	return loc
+}
+
+func getKnownPokemon(cfg *config) []string {
+	var pok []string
+	for p := range cfg.KnownPokemon {
+		pok = append(pok, p)
+	}
+	sort.Strings(pok)
+	return pok
+}
+
+func getCaughtPokemon(cfg *config) []string {
+	var caught []string
+	for pokemon := range cfg.Pokedex {
+		caught = append(caught, pokemon)
+	}
+	sort.Strings(caught)
+	return caught
 }
 
 func getCommands() map[string]cliCommand {
@@ -172,19 +203,22 @@ func getCommands() map[string]cliCommand {
 			callback:    commandMapb,
 		},
 		"explore": {
-			name:        "explore",
-			description: "Shows all Pokemon in the provided area",
-			callback:    commandExplore,
+			name:         "explore",
+			description:  "Shows all Pokemon in the provided area",
+			callback:     commandExplore,
+			argCompleter: getKnownLocations,
 		},
 		"catch": {
-			name:        "catch",
-			description: "Try to catch a pokemon. If it's caught, it gets added to the PokeDex",
-			callback:    commandCatch,
+			name:         "catch",
+			description:  "Try to catch a pokemon. If it's caught, it gets added to the PokeDex",
+			callback:     commandCatch,
+			argCompleter: getKnownPokemon,
 		},
 		"inspect": {
-			name:        "inspect",
-			description: "Print various stats for a Pokemon that's already in the PokeDex",
-			callback:    commandInspect,
+			name:         "inspect",
+			description:  "Print various stats for a Pokemon that's already in the PokeDex",
+			callback:     commandInspect,
+			argCompleter: getCaughtPokemon,
 		},
 		"pokedex": {
 			name:        "pokedex",

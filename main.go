@@ -10,20 +10,41 @@ import (
 )
 
 type config struct {
-	Next     string
-	Previous string
-	Pokedex  map[string]pokeapi.Pokemon
+	Next           string
+	Previous       string
+	Pokedex        map[string]pokeapi.Pokemon
+	KnownLocations map[string]struct{}
+	KnownPokemon   map[string]struct{}
 }
 
 func main() {
-	rl, err := readline.New("Pokedex > ")
+
+	cfg := config{}
+	cfg.Pokedex = make(map[string]pokeapi.Pokemon)
+	cfg.KnownLocations = make(map[string]struct{})
+	cfg.KnownPokemon = make(map[string]struct{})
+
+	commands := getCommands()
+	var pcItems []readline.PrefixCompleterInterface
+	for _, c := range commands {
+		if c.argCompleter == nil {
+			pcItems = append(pcItems, readline.PcItem(c.name))
+		} else {
+			pcItems = append(pcItems, readline.PcItem(c.name, readline.PcItemDynamic(func(s string) []string {
+				return c.argCompleter(&cfg)
+			})))
+		}
+	}
+	completer := readline.NewPrefixCompleter(pcItems...)
+	readlineCfg := readline.Config{
+		Prompt:       "Pokedex > ",
+		AutoComplete: completer,
+	}
+	rl, err := readline.NewEx(&readlineCfg)
 	if err != nil {
 		log.Fatalf("error: %s", err)
 	}
 	defer rl.Close()
-
-	cfg := config{}
-	cfg.Pokedex = make(map[string]pokeapi.Pokemon)
 
 	for {
 		line, err := rl.Readline()
@@ -45,7 +66,6 @@ func main() {
 			argument = words[1]
 		}
 
-		commands := getCommands()
 		val, ok := commands[command]
 		if !ok {
 			fmt.Println("Unknown command")
