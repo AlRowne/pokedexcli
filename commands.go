@@ -153,31 +153,13 @@ type cliCommand struct {
 	argCompleter func(*config) []string
 }
 
-func getKnownLocations(cfg *config) []string {
-	var loc []string
-	for l := range cfg.KnownLocations {
-		loc = append(loc, l)
+func sortedKeys[V any](m map[string]V) []string {
+	var keys []string
+	for k := range m {
+		keys = append(keys, k)
 	}
-	sort.Strings(loc)
-	return loc
-}
-
-func getKnownPokemon(cfg *config) []string {
-	var pok []string
-	for p := range cfg.KnownPokemon {
-		pok = append(pok, p)
-	}
-	sort.Strings(pok)
-	return pok
-}
-
-func getCaughtPokemon(cfg *config) []string {
-	var caught []string
-	for pokemon := range cfg.Pokedex {
-		caught = append(caught, pokemon)
-	}
-	sort.Strings(caught)
-	return caught
+	sort.Strings(keys)
+	return keys
 }
 
 func getCommands() map[string]cliCommand {
@@ -203,22 +185,28 @@ func getCommands() map[string]cliCommand {
 			callback:    commandMapb,
 		},
 		"explore": {
-			name:         "explore",
-			description:  "Shows all Pokemon in the provided area",
-			callback:     commandExplore,
-			argCompleter: getKnownLocations,
+			name:        "explore",
+			description: "Shows all Pokemon in the provided area",
+			callback:    commandExplore,
+			argCompleter: func(cfg *config) []string {
+				return sortedKeys(cfg.KnownLocations)
+			},
 		},
 		"catch": {
-			name:         "catch",
-			description:  "Try to catch a pokemon. If it's caught, it gets added to the PokeDex",
-			callback:     commandCatch,
-			argCompleter: getKnownPokemon,
+			name:        "catch",
+			description: "Try to catch a pokemon. If it's caught, it gets added to the PokeDex",
+			callback:    commandCatch,
+			argCompleter: func(cfg *config) []string {
+				return sortedKeys(cfg.KnownPokemon)
+			},
 		},
 		"inspect": {
-			name:         "inspect",
-			description:  "Print various stats for a Pokemon that's already in the PokeDex",
-			callback:     commandInspect,
-			argCompleter: getCaughtPokemon,
+			name:        "inspect",
+			description: "Print various stats for a Pokemon that's already in the PokeDex",
+			callback:    commandInspect,
+			argCompleter: func(cfg *config) []string {
+				return sortedKeys(cfg.Pokedex)
+			},
 		},
 		"pokedex": {
 			name:        "pokedex",
