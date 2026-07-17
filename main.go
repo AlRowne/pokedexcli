@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"io"
+	"log"
 
 	"github.com/AlRowne/pokedexcli/internal/pokeapi"
+	"github.com/chzyer/readline"
 )
 
 type config struct {
@@ -15,17 +16,24 @@ type config struct {
 }
 
 func main() {
-	scanner := bufio.NewScanner(os.Stdin)
+	rl, err := readline.New("Pokedex > ")
+	if err != nil {
+		log.Fatalf("error: %s", err)
+	}
+	defer rl.Close()
 
 	cfg := config{}
 	cfg.Pokedex = make(map[string]pokeapi.Pokemon)
 
 	for {
-		fmt.Print("Pokedex > ")
-		if ok := scanner.Scan(); !ok {
+		line, err := rl.Readline()
+		if err == io.EOF || err == readline.ErrInterrupt {
+			fmt.Println("Exiting...")
 			break
 		}
-		line := scanner.Text()
+		if err != nil {
+			log.Fatalf("error: %s", err)
+		}
 		words := cleanInput(line)
 		if len(words) == 0 {
 			fmt.Println("Please enter a command")
@@ -46,8 +54,5 @@ func main() {
 		if err := val.callback(&cfg, argument); err != nil {
 			fmt.Println(err)
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		fmt.Printf("Scanner Error: %v\n", err)
 	}
 }
