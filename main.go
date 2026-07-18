@@ -32,6 +32,9 @@ func main() {
 	commands := getCommands()
 	var pcItems []readline.PrefixCompleterInterface
 	for _, c := range commands {
+		if c.name == "team" {
+			continue
+		}
 		if c.argCompleter == nil {
 			pcItems = append(pcItems, readline.PcItem(c.name))
 		} else {
@@ -40,6 +43,9 @@ func main() {
 			})))
 		}
 	}
+	addCompleter := readline.PcItem("add", readline.PcItemDynamic(func(s string) []string { return sortedKeys(cfg.Pokedex) }))
+	removeCompleter := readline.PcItem("remove", readline.PcItemDynamic(func(s string) []string { return cfg.Team }))
+	pcItems = append(pcItems, readline.PcItem("team", addCompleter, removeCompleter))
 	completer := readline.NewPrefixCompleter(pcItems...)
 	readlineCfg := readline.Config{
 		Prompt:       "Pokedex > ",

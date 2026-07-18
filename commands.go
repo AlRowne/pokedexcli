@@ -174,11 +174,11 @@ func commandTeam(cfg *config, s []string) error {
 	}
 	switch s[0] {
 	case "add":
-		if len(cfg.Team) >= 6 {
-			return errors.New("your team is full (max 6 pokemon)")
-		}
 		if len(s) < 2 {
 			return errors.New("provide the name of a pokemon")
+		}
+		if len(cfg.Team) >= 6 {
+			return errors.New("your team is full (max 6 pokemon)")
 		}
 		pokemon := s[1]
 		if _, ok := cfg.Pokedex[pokemon]; !ok {
@@ -205,7 +205,7 @@ func commandTeam(cfg *config, s []string) error {
 		if foundIndex == -1 {
 			return errors.New("this pokemon is not in your team")
 		}
-		fmt.Printf("Removing %s from your team", pokemon)
+		fmt.Printf("Removing %s from your team\n", pokemon)
 		cfg.Team = append(cfg.Team[:foundIndex], cfg.Team[foundIndex+1:]...)
 		if err := saveState(cfg); err != nil {
 			return err
