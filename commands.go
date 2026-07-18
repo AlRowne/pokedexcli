@@ -217,6 +217,52 @@ func commandTeam(cfg *config, s []string) error {
 	return nil
 }
 
+func commandFight(cfg *config, s []string) error {
+	if len(s) == 0 {
+		return errors.New("provide an area to fight in")
+	}
+	if len(cfg.Team) == 0 {
+		return errors.New("your team is empty")
+	}
+
+	encounters, err := pokeapi.GetPokemonEncounters(s[0])
+	if err != nil {
+		return err
+	}
+	if len(encounters.PokemonEncounters) == 0 {
+		return errors.New("no pokemon in this area")
+	}
+	n := rand.Intn(len(encounters.PokemonEncounters))
+	opponentName := encounters.PokemonEncounters[n].Pokemon.Name
+
+	opponent, err := pokeapi.GetPokemon(opponentName)
+	if err != nil {
+		return err
+	}
+	mine := cfg.Pokedex[cfg.Team[0]]
+
+	oppPower := statSum(opponent)
+	myPower := statSum(mine)
+
+	fmt.Printf("My %s (power %d) vs. wild %s (power %d)\n", mine.Name, myPower, opponent.Name, oppPower)
+
+	winChance := float64(myPower) / float64((myPower + oppPower))
+	if rand.Float64() < winChance {
+		fmt.Printf("%s wins!\n", mine.Name)
+	} else {
+		fmt.Printf("%s wins!\n", opponent.Name)
+	}
+	return nil
+}
+
+func statSum(p pokeapi.Pokemon) int {
+	sum := 0
+	for _, v := range p.Stats {
+		sum += v.BaseStat
+	}
+	return sum
+}
+
 type cliCommand struct {
 	name         string
 	description  string
@@ -288,6 +334,14 @@ func getCommands() map[string]cliCommand {
 			name:        "team",
 			description: "Show your team",
 			callback:    commandTeam,
+		},
+		"fight": {
+			name:        "fight",
+			description: "Fight a random Pokemon in a given area",
+			callback:    commandFight,
+			argCompleter: func(cfg *config) []string {
+				return sortedKeys(cfg.KnownLocations)
+			},
 		},
 	}
 	return cliCommands

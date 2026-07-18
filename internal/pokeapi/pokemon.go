@@ -15,6 +15,7 @@ type Pokemon struct {
 	Weight         int           `json:"weight"`
 	Stats          []PokemonStat `json:"stats"`
 	Types          []PokemonType `json:"types"`
+	Moves          []PokemonMove `json:"moves"`
 }
 
 type PokemonStat struct {
@@ -27,6 +28,12 @@ type PokemonType struct {
 	Type struct {
 		Name string `json:"name"`
 	} `json:"type"`
+}
+
+type PokemonMove struct {
+	Move struct {
+		Name string `json:"name"`
+	} `json:"move"`
 }
 
 func GetPokemon(name string) (Pokemon, error) {
