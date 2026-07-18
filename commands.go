@@ -45,6 +45,10 @@ func commandMap(cfg *config, s string) error {
 	}
 	cfg.Next = stringOrEmpty(locationAreas.Next)
 	cfg.Previous = stringOrEmpty(locationAreas.Previous)
+	err = saveState(cfg)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -65,6 +69,10 @@ func commandMapb(cfg *config, s string) error {
 	}
 	cfg.Next = stringOrEmpty(locationAreas.Next)
 	cfg.Previous = stringOrEmpty(locationAreas.Previous)
+	err = saveState(cfg)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -84,6 +92,10 @@ func commandExplore(cfg *config, s string) error {
 		cfg.KnownPokemon[encounter.Pokemon.Name] = struct{}{}
 		fmt.Printf(" - %s\n", encounter.Pokemon.Name)
 	}
+	err = saveState(cfg)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -100,6 +112,9 @@ func commandCatch(cfg *config, s string) error {
 	if pokemon.BaseExperience <= 0 || rand.Intn(pokemon.BaseExperience) < threshold {
 		fmt.Printf("%s was caught!\n", pokemon.Name)
 		cfg.Pokedex[pokemon.Name] = pokemon
+		if err := saveState(cfg); err != nil {
+			return err
+		}
 	} else {
 		fmt.Printf("%s escaped!\n", pokemon.Name)
 	}

@@ -24,6 +24,10 @@ func main() {
 	cfg.KnownLocations = make(map[string]struct{})
 	cfg.KnownPokemon = make(map[string]struct{})
 
+	if err := loadState(&cfg); err != nil {
+		log.Fatalf("error loading pokedex: %s", err)
+	}
+
 	commands := getCommands()
 	var pcItems []readline.PrefixCompleterInterface
 	for _, c := range commands {
