@@ -76,8 +76,11 @@ Weight: 455
 - **Tab-completion.** Press `Tab` to complete arguments — `explore` suggests
   location areas you've seen via `map`, `catch` suggests Pokémon you've found via
   `explore`, and `inspect` suggests Pokémon you've actually caught. Suggestions
-  are built live from what you've discovered this session, not the full PokéAPI
-  dataset, so you're prompted to explore first.
+  are built live from what you've discovered, not the full PokéAPI dataset, so
+  you're prompted to explore first.
+- **Saved progress.** Your Pokédex and the location/Pokémon names you've
+  discovered are saved to disk after every change and reloaded on startup, so
+  your progress (and tab-completion suggestions) survive between runs.
 - **Command history.** Arrow keys scroll through previously entered commands
   (via [chzyer/readline](https://github.com/chzyer/readline)).
 - **Response caching.** HTTP responses are cached in memory for 30 minutes, with
@@ -90,14 +93,16 @@ Weight: 455
 .
 ├── main.go                     # REPL loop, readline setup, tab-completion wiring
 ├── commands.go                 # command definitions and their handlers
+├── persistence.go              # saving/loading state as JSON
 ├── repl.go                     # input cleaning
 └── internal/
     ├── pokeapi/                # PokéAPI client (location areas, encounters, pokemon)
     └── pokecache/              # concurrency-safe in-memory cache with TTL reaping
 ```
 
-State (your Pokédex and the location/Pokémon names you've discovered) lives in
-memory for the duration of a session — it is not persisted between runs.
+State (your Pokédex and the location/Pokémon names you've discovered) is saved to
+`pokedex.json` in your user config directory (e.g. `~/.config/pokedexcli/` on
+Linux) after every change, and reloaded when you start the program again.
 
 ## Development
 
