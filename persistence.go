@@ -13,6 +13,7 @@ type saveData struct {
 	Pokedex        map[string]pokeapi.Pokemon `json:"pokedex"`
 	KnownLocations map[string]struct{}        `json:"known_locations"`
 	KnownPokemon   map[string]struct{}        `json:"known_pokemon"`
+	Team           []string                   `json:"team"`
 }
 
 func getSavePath() (string, error) {
@@ -29,6 +30,7 @@ func saveState(cfg *config) error {
 		Pokedex:        cfg.Pokedex,
 		KnownLocations: cfg.KnownLocations,
 		KnownPokemon:   cfg.KnownPokemon,
+		Team:           cfg.Team,
 	})
 	if err != nil {
 		return err
@@ -70,6 +72,9 @@ func loadState(cfg *config) error {
 	}
 	if sd.KnownPokemon != nil {
 		cfg.KnownPokemon = sd.KnownPokemon
+	}
+	if sd.Team != nil {
+		cfg.Team = sd.Team
 	}
 	return nil
 }

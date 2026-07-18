@@ -15,6 +15,7 @@ type config struct {
 	Pokedex        map[string]pokeapi.Pokemon
 	KnownLocations map[string]struct{}
 	KnownPokemon   map[string]struct{}
+	Team           []string
 }
 
 func main() {
@@ -65,17 +66,14 @@ func main() {
 			continue
 		}
 		command := words[0]
-		argument := ""
-		if len(words) > 1 {
-			argument = words[1]
-		}
+		arguments := words[1:]
 
 		val, ok := commands[command]
 		if !ok {
 			fmt.Println("Unknown command")
 			continue
 		}
-		if err := val.callback(&cfg, argument); err != nil {
+		if err := val.callback(&cfg, arguments); err != nil {
 			fmt.Println(err)
 		}
 	}

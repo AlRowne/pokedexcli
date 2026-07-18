@@ -17,13 +17,13 @@ func stringOrEmpty(s *string) string {
 	return *s
 }
 
-func commandExit(cfg *config, s string) error {
+func commandExit(cfg *config, s []string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(cfg *config, s string) error {
+func commandHelp(cfg *config, s []string) error {
 	fmt.Println("Welcome to the Pokedex!")
 	fmt.Println("Usage:")
 	fmt.Println()
@@ -33,7 +33,7 @@ func commandHelp(cfg *config, s string) error {
 	}
 	return nil
 }
-func commandMap(cfg *config, s string) error {
+func commandMap(cfg *config, s []string) error {
 	locationAreas, err := pokeapi.GetLocationAreas(cfg.Next)
 	if err != nil {
 		return err
@@ -52,7 +52,7 @@ func commandMap(cfg *config, s string) error {
 	return nil
 }
 
-func commandMapb(cfg *config, s string) error {
+func commandMapb(cfg *config, s []string) error {
 	if cfg.Previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
@@ -76,12 +76,12 @@ func commandMapb(cfg *config, s string) error {
 	return nil
 }
 
-func commandExplore(cfg *config, s string) error {
-	if s == "" {
+func commandExplore(cfg *config, s []string) error {
+	if len(s) == 0 {
 		return errors.New("please provide an area to explore. use the map/mapb command")
 	}
-	fmt.Printf("Exploring %s...\n", s)
-	response, err := pokeapi.GetPokemonEncounters(s)
+	fmt.Printf("Exploring %s...\n", s[0])
+	response, err := pokeapi.GetPokemonEncounters(s[0])
 	if err != nil {
 		return err
 	}
@@ -99,12 +99,12 @@ func commandExplore(cfg *config, s string) error {
 	return nil
 }
 
-func commandCatch(cfg *config, s string) error {
-	if s == "" {
+func commandCatch(cfg *config, s []string) error {
+	if len(s) == 0 {
 		return errors.New("please provide a Pokemon to catch. use the explore command to find pokemon")
 	}
-	fmt.Printf("Throwing a Pokeball at %s...\n", s)
-	pokemon, err := pokeapi.GetPokemon(s)
+	fmt.Printf("Throwing a Pokeball at %s...\n", s[0])
+	pokemon, err := pokeapi.GetPokemon(s[0])
 	if err != nil {
 		return err
 	}
@@ -121,11 +121,11 @@ func commandCatch(cfg *config, s string) error {
 	return nil
 }
 
-func commandInspect(cfg *config, s string) error {
-	if s == "" {
+func commandInspect(cfg *config, s []string) error {
+	if len(s) == 0 {
 		return errors.New("no pokemon name provided")
 	}
-	pokemon, ok := cfg.Pokedex[s]
+	pokemon, ok := cfg.Pokedex[s[0]]
 	if !ok {
 		return errors.New("you have not caught that pokemon")
 	}
@@ -144,7 +144,7 @@ func commandInspect(cfg *config, s string) error {
 	return nil
 }
 
-func commandPokedex(cfg *config, s string) error {
+func commandPokedex(cfg *config, s []string) error {
 	if len(cfg.Pokedex) < 1 {
 		return errors.New("your pokedex is empty")
 	}
@@ -161,10 +161,66 @@ func commandPokedex(cfg *config, s string) error {
 	return nil
 }
 
+func commandTeam(cfg *config, s []string) error {
+	if len(s) == 0 {
+		if len(cfg.Team) == 0 {
+			return errors.New("your team is empty")
+		}
+		fmt.Println("Your team:")
+		for n, pokemonName := range cfg.Team {
+			fmt.Printf("%d. %s\n", n+1, pokemonName)
+		}
+		return nil
+	}
+	switch s[0] {
+	case "add":
+		if len(cfg.Team) >= 6 {
+			return errors.New("your team is full (max 6 pokemon)")
+		}
+		if len(s) < 2 {
+			return errors.New("provide the name of a pokemon")
+		}
+		pokemon := s[1]
+		if _, ok := cfg.Pokedex[pokemon]; !ok {
+			return errors.New("pokemon is not caught yet")
+		}
+		fmt.Printf("Added %s to your team.\n", pokemon)
+		cfg.Team = append(cfg.Team, pokemon)
+
+		if err := saveState(cfg); err != nil {
+			return err
+		}
+	case "remove":
+		if len(s) < 2 {
+			return errors.New("provide the name of a pokemon")
+		}
+		pokemon := s[1]
+		foundIndex := -1
+		for i, name := range cfg.Team {
+			if name == pokemon {
+				foundIndex = i
+				break
+			}
+		}
+		if foundIndex == -1 {
+			return errors.New("this pokemon is not in your team")
+		}
+		fmt.Printf("Removing %s from your team", pokemon)
+		cfg.Team = append(cfg.Team[:foundIndex], cfg.Team[foundIndex+1:]...)
+		if err := saveState(cfg); err != nil {
+			return err
+		}
+
+	default:
+		fmt.Println("use 'team add' or 'team remove'")
+	}
+	return nil
+}
+
 type cliCommand struct {
 	name         string
 	description  string
-	callback     func(*config, string) error
+	callback     func(*config, []string) error
 	argCompleter func(*config) []string
 }
 
@@ -227,6 +283,11 @@ func getCommands() map[string]cliCommand {
 			name:        "pokedex",
 			description: "Show your PokeDex",
 			callback:    commandPokedex,
+		},
+		"team": {
+			name:        "team",
+			description: "Show your team",
+			callback:    commandTeam,
 		},
 	}
 	return cliCommands
